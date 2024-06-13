@@ -85,6 +85,7 @@ dis_int:  #khi xảy ra ngắt, dis_int sẽ dừng đếm thời gian
 #--------------------------------------------------------
 get_caus:   #kiểm tra ngắt do bàn phím hay counter
 	mfc0  $t8, $13                             #coprocessor
+	#mfc0: đọc thanh ghi trong bộ đồng xử lí C0
 	li    $t2, MASK_CAUSE_COUNTER              # if Cause value confirm Counter..
 	and   $at, $t8,$t2     #=0-->ko phải do counter                          
 		
@@ -92,6 +93,7 @@ get_caus:   #kiểm tra ngắt do bàn phím hay counter
 end_process: 
 	mtc0 $zero, $13 #giá trị 0 vào thanh ghi $13 (Cause register) của Coprocessor 0. 
 	                #xóa thông tin về nguyên nhân gây ra ngoại lệ hoặc ngắt.           
+     #mtc0: ghi giá trị vào thanh ghi trong bộ đồng xử lý C0
 check_WaitForKey:	#$t1 = [$k1] = KEY_READY=0 thì chuyển đến en_int
 	beq  $t1, $zero, en_int
 check_Entered:		#$s5: true if Enter is press, nếu chưa phải "\n" thì đến en_int
@@ -101,7 +103,7 @@ check_Entered:		#$s5: true if Enter is press, nếu chưa phải "\n" thì đế
 # Evaluate the return address of main routine
 # epc <= epc + 4
 #--------------------------------------------------------
-next_pc:   
+next_pc:   #cập nhật địa chỉ trả về của chương trình chính sau khi xử lí gián đoạn
 	mfc0    $at, $14	        # $at <= Coproc0.$14 = Coproc0.epc    
        #Coproc0.epc chứa địa chỉ câu lệnh tiếp theo được thực hiện sau khi xử lí ngắt
 	addi    $at, $at, 4	 # $at = $at + 4 (next instruction)              
@@ -124,8 +126,8 @@ SLEEP:
 #	b      LOOP		#Branch to LOOP   # có thể sử dụng lệnh này để quay lại LOOP, lặp lại quá trình sleep
 
 RETURN:   
-	eret                       	# Return from exception
-	
+	eret                       	#quay lại chương trình chính
+	#eret gán nội dung thanh ghi PC bằng giá trị thanh ghi $14(epc)
 END:
 Calc_Speed:
 	mtc1  $s6, $f1        #nạp giá trị thanh ghi $s6 vào thanh ghi dấu phẩy động $f1($s6 lưu thời gian)
